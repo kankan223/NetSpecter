@@ -1,0 +1,4 @@
+# NetSpecter Requirements
+
+psutil>=7.0.0
+rich>=14.0.0
