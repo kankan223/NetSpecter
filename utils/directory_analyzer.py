@@ -1,7 +1,6 @@
 from pathlib import Path
 from datetime import datetime
 import json
-from collections import defaultdict
 
 def report(path):
 
@@ -147,9 +146,7 @@ def main():
     except Exception as e:
         print(f"Unexpected error: {e}")
         return
-         
-    
-    
+             
 
 if __name__ == "__main__":
     main()
