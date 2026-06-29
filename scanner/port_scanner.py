@@ -130,28 +130,26 @@ def parser():
     return parser.parse_args()
 
 
-def main():
-    # ip = "google.com" 
-    # start = 1
-    # end = 60000
+def main(ip = None, start = None, end = None):
 
-    args = parser()
+    if ip is None:
+        args = parser()
 
-    if args.ip is None:
-        args.ip = input("Enter IP: ")
-        args.start = int(input("Enter starting port: "))
-        args.end = int(input("Enter ending port: "))
-
-    # ip = input("Enter an ip address or hostname: ")
-    # start = input("Enter starting port: ")
-    # end = input("Enter ending port: ")
+        if args.ip is None:
+            args.ip = input("Enter an ip address or hostname: ")
+            args.start = int(input("Enter starting port: "))
+            args.end = int(input("Enter ending port: "))
+        
+        ip = args.ip
+        start = args.start
+        end = args.end
     
     start_time = time.perf_counter()
     
     print("===================================")
     print("NetSpecter Port Scanner")
-    print(f"Target: {args.ip}")
-    print(f"Range: {args.start} - {args.end}")
+    print(f"Target: {ip}")
+    print(f"Range: {start} - {end}")
     print("===================================")
 
     config = load_config()
@@ -159,9 +157,9 @@ def main():
     try:
         ports = scan(
             config, 
-            args.ip, 
-            args.start, 
-            args.end
+            ip, 
+            start, 
+            end
         )
 
     except socket.gaierror as e:

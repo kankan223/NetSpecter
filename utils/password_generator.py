@@ -52,13 +52,18 @@ def password_generator(length, exclude_ambiguous = False):
     return ''.join(password)
 
 
-def main():
-    exclude_ambiguous = False
+def main(length = None, exclude_ambiguous = False):
     
-    length = input("Enter the length of character : ")
-    amb = input("Exclude ambiguous characters (0 O o 1 l I)? (y/n): ")
+    print("==================================")
+    print("\n" + "--------PASSWORD GENERATOR--------")
+    print("==================================")
+    if length == None:
+        exclude_ambiguous = False
+        
+        length = input("Enter the length of character : ")
+        amb = input("Exclude ambiguous characters (0 O o 1 l I)? (y/n): ")
 
-    exclude_ambiguous = amb.lower() == "y"
+        exclude_ambiguous = amb.lower() == "y"
     
     if length.isdigit():
         length = int(length)
@@ -79,6 +84,8 @@ def main():
 
     else:
         print("Enter a valid number")
+
+    print("\n" + "==================================")
 
 if __name__ == "__main__":
     main()

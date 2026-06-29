@@ -103,11 +103,17 @@ def format_size(size_in_bytes):
             return f"{size_in_bytes:.2f} {unit}"
         size_in_bytes /= 1024.0
 
-def main():
-    dir_path = input("Enter a folder path : \n")
+def main(path = None):
+
+    print("==================================")
+    print("\n" + "---------FOLDER  ANALYZER---------")
+    print("==================================")
+
+    if path == None:
+        path = input("Enter a folder path : \n")
 
     try:
-        path = Path(dir_path)
+        path = Path(path)
 
         if not path.exists():
             raise FileNotFoundError
@@ -119,7 +125,7 @@ def main():
 
         print("Folder Analysis Report")
         print("======================")
-        print("\n" + f"Path: {dir_path}")
+        print("\n" + f"Path: {path}")
         print(f"Files : {data['file']}")
         print(f"Folders : {data['folder']}")
         print("\n" + "Extensions:")
@@ -130,7 +136,7 @@ def main():
 
         print("\n" + f"Folder Size : {format_size(data['dir_size'])}")
 
-        txt_path, json_path = write_report(dir_path, data)
+        txt_path, json_path = write_report(path, data)
         print(f"TXT report saved to: {txt_path}")
         print(f"JSON report saved to: {json_path}")
 
@@ -146,6 +152,8 @@ def main():
     except Exception as e:
         print(f"Unexpected error: {e}")
         return
+
+    print("\n" + "==================================")
              
 
 if __name__ == "__main__":

@@ -13,8 +13,8 @@ venv/
 .idea/
 
 # Logs
-logs/*.json
-logs/*.txt
+logs/*
+!logs/.gitkeep
 
 # Reports
 reports/

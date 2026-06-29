@@ -64,8 +64,14 @@ def organizer(path):
             shutil.move(item, destination_path)
             
     
-def main():
-    path = input("Enter a folder path : \n")
+def main(path = None):
+
+    print("==================================")
+    print("\n" + "---------FOLDER ORGANIZER---------")
+    print("==================================")
+
+    if path == None:
+        path = input("Enter a folder path : \n")
 
     try:
         path = Path(path)
@@ -79,6 +85,8 @@ def main():
 
         organizer(path)
 
+        print("\n" + f"The folder {path} has been organized.")
+        print("\n" + "==================================")
 
     except FileNotFoundError:
         print("Folder does not exist. Check the path.")
@@ -92,6 +100,7 @@ def main():
     except Exception as e:
         print(f"Unexpected error: {e}")
         return
+
 
 if __name__ == "__main__":
     main()

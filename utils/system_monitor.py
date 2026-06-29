@@ -42,6 +42,7 @@ def main():
     total_disk_gb = system_data['disk_total'] / (1024 ** 3)
     used_disk_gb = system_data['disk_used'] / (1024 ** 3)
 
+    print("=========================")
     print("\n" + "-------SYSTEM INFO-------")
     print("=========================")
     print(f"CPU Usage: {system_data['cpu_usage']}%")
@@ -61,6 +62,8 @@ def main():
     print()
     print(f"Downloaded: {system_data['downloaded']  /(1024 ** 3):.2f} GB")
     print(f"Uploaded: {system_data['uploaded']  /(1024 ** 3):.2f} GB")
+
+    print("=========================")
 
     
 if __name__ == "__main__":

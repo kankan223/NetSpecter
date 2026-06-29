@@ -1,8 +1,15 @@
+![Python](https://img.shields.io/badge/Python-3.11-blue)
+
+![License](https://img.shields.io/badge/License-MIT-green)
+
+![Status](https://img.shields.io/badge/Status-Active-success)
+
 # NetSpecter
+> A learning-focused cybersecurity toolkit built to explore networking, Linux, and Python through practical command-line utilities.
 
-NetSpecter is a Python-based collection of networking, system, and file management utilities developed as part of my cybersecurity and software engineering learning journey.
+NetSpecter is a modular command-line toolkit written in Python that combines networking, cybersecurity, system monitoring, and file management utilities into a single application.
 
-The project focuses on building practical command-line tools while learning networking concepts, concurrent programming, Linux development, and software architecture.
+The project was built as part of my software engineering and cybersecurity learning journey, with a focus on writing clean, maintainable code while exploring socket programming, concurrent programming, Linux development, and command-line application design.
 
 ---
 
@@ -11,56 +18,101 @@ The project focuses on building practical command-line tools while learning netw
 ### Networking
 
 * Multithreaded TCP Port Scanner
-* DNS Resolution
+* Hostname to IP Resolution
 * Service Detection
 * Configurable Thread Pool
 * Configurable Socket Timeout
-* Port Scan JSON Logging
+* JSON Scan Reports
 * Port Latency Measurement
 
 ### File Utilities
 
 * Directory Analyzer
-* File Organizer
+* Automatic File Organizer
 
-### Security Utilities
+### Security
 
 * Cryptographically Secure Password Generator
-* Optional Ambiguous Character Removal
+* Optional Ambiguous Character Exclusion
 
-### System Utilities
+### System Monitoring
 
-* System Information Viewer
-* CPU Usage
+* CPU Information
 * Memory Usage
 * Disk Usage
 * Network Statistics
 * System Uptime
+
+### Command-Line Interface
+
+* Unified CLI (`main.py`)
+* Subcommand-based architecture using `argparse`
+* Modular project structure
+
+---
+
+## Quick Start
+
+Clone the repository:
+
+```bash
+git clone https://github.com/kankan223/NetSpecter.git
+cd NetSpecter
+```
+
+Create a virtual environment:
+
+```bash
+python -m venv venv
+```
+
+Activate it:
+
+### Linux
+
+```bash
+source venv/bin/activate
+```
+
+Install dependencies:
+
+```bash
+pip install -r requirements.txt
+```
+
+Display all available commands:
+
+```bash
+python main.py --help
+```
 
 ---
 
 ## Project Structure
 
 ```text
-NetSpecter/
+NetSpecter/ 
+├── main.py
 │
+├── scanner/
+│   └── scanner.py
+│
+├── utils/
+│   ├── directory_analyzer.py
+│   ├── file_organizer.py
+│   ├── password_generator.py
+│   └── system_monitor.py
+│ 
 ├── config/
 │   └── port_scanner_config.json
 │
 ├── logs/
 │
-├── scanner/
-│   └── scanner.py
+├── screenshots/
 │
-├── utilities/
-│   ├── directory_analyzer.py
-│   ├── file_organizer.py
-│   ├── password_generator.py
-│   └── system_monitor.py
-│
+├── requirements.txt
 ├── README.md
 ├── LICENSE
-├── requirements.txt
 └── .gitignore
 ```
 
@@ -71,9 +123,10 @@ NetSpecter/
 * Python 3.11+
 * Linux (developed and tested on Arch Linux)
 
-Python packages:
+Third-party packages:
 
-* psutil
+- psutil
+- rich *(planned for enhanced terminal output)*
 
 Install dependencies:
 
@@ -85,47 +138,49 @@ pip install -r requirements.txt
 
 ## Usage
 
+Display all available commands:
+
+```bash
+python main.py --help
+```
+
 ### Port Scanner
 
 ```bash
-python scanner/scanner.py google.com
-
-python scanner/scanner.py 192.168.1.1 -s 20 -e 1000
+python main.py scan google.com
 ```
-
----
-
-### Directory Analyzer
 
 ```bash
-python utilities/directory_analyzer.py
+python main.py scan 192.168.1.1 -s 20 -e 1024
 ```
-
----
-
-### File Organizer
-
-```bash
-python utilities/file_organizer.py
-```
-
----
 
 ### Password Generator
 
 ```bash
-python utilities/password_generator.py
+python main.py password
 ```
 
----
+```bash
+python main.py password -l 20 -a
+```
+
+### Directory Analyzer
+
+```bash
+python main.py analyze ~/Downloads
+```
+
+### File Organizer
+
+```bash
+python main.py organize ~/Downloads
+```
 
 ### System Information
 
 ```bash
-python utilities/system_monitor.py
+python main.py system
 ```
-
----
 
 ## Configuration
 
@@ -143,18 +198,45 @@ Current configurable options include:
 
 ---
 
-## Output
+## Example
 
-The port scanner automatically saves scan results as JSON files inside the `logs/` directory.
+```text
+$ python main.py scan scanme.nmap.org -e 1024
 
-The Directory Analyzer also generates both:
+===================================
+NetSpecter Port Scanner
+Target: scanme.nmap.org
+Range: 1 - 1024
+===================================
 
-* Text reports
-* JSON reports
+22     Open     0.42 ms    (SSH)
+80     Open     1.18 ms    (HTTP)
+
+===================================
+Scan Complete.
+2 open ports found.
+Scan completed in 0.54 seconds
+===================================
+```
 
 ---
 
-## Future Improvements
+## Output
+
+The toolkit automatically generates structured reports where applicable.
+
+### Port Scanner
+
+    - JSON scan reports
+
+### Directory Analyzer
+
+    - JSON reports
+    - TXT reports
+
+---
+
+## Future Roadmap
 
 Planned features include:
 
@@ -162,19 +244,28 @@ Planned features include:
 * UDP Port Scanner
 * Network Discovery
 * Rich Terminal Interface
-* CLI Toolkit (`main.py`)
-* Plugin Architecture
-* Unit Tests
-* PyQt GUI
+* Plugin Support
+* Unit Testing
+* GUI Application
 * OS Fingerprinting
+* Packaging for pip
 
 ---
 
-## Learning Goals
+## Technologies Used
 
-This project is being built to strengthen my understanding of:
+### Languages & Libraries
 
 * Python
+* argparse
+* socket
+* pathlib
+* ThreadPoolExecutor
+* JSON
+* psutil
+
+### Concepts
+
 * Networking
 * Socket Programming
 * Concurrent Programming
@@ -182,7 +273,39 @@ This project is being built to strengthen my understanding of:
 * Cybersecurity Fundamentals
 * Software Architecture
 * Command-Line Applications
-* Git and GitHub
+* Git & GitHub
+
+---
+
+## Screenshots
+
+### Port Scanner
+
+![Port Scanner](screenshots/scanner.png)
+
+### System Information
+
+![System Monitor](screenshots/system.png)
+
+### Password Generator
+
+![Password Generator](screenshots/password.png)
+
+### Directory Analyzer
+
+![Directory Analyzer](screenshots/directory_analyzer.png)
+
+### Folder Organizer
+
+![Folder Organizer](screenshots/folder_organizer.png)
+
+---
+
+## Current Status
+
+NetSpecter is under active development.
+
+The current release focuses on building a modular command-line toolkit for networking and system utilities. Future updates will introduce advanced cybersecurity features such as banner grabbing, UDP scanning, network discovery, richer terminal interfaces, automated testing, packaging support, and additional Linux utilities.
 
 ---
 
@@ -191,3 +314,7 @@ This project is being built to strengthen my understanding of:
 This project is licensed under the MIT License.
 
 See the LICENSE file for details.
+
+---
+
+Developed by **Ken** as part of a continuous software engineering and cybersecurity learning journey.
