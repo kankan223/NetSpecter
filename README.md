@@ -154,6 +154,12 @@ python main.py scan google.com
 python main.py scan 192.168.1.1 -s 20 -e 1024
 ```
 
+Override the config file for a single scan:
+
+```bash
+python main.py scan 192.168.1.1 -t 0.5 -w 500 --logs
+```
+
 ### Password Generator
 
 ```bash
@@ -192,9 +198,13 @@ config/port_scanner_config.json
 
 Current configurable options include:
 
-* Socket timeout
-* Maximum worker threads
-* Log generation
+* Socket timeout (`timeout`, also `-t/--timeout`)
+* Maximum worker threads (`max_worker`, also `-w/--workers`)
+* Log generation (`create_logs`, also `--logs` / `--no-logs`)
+
+Command-line options take priority over the config file. If the file is missing or contains invalid values, the defaults (`0.3`, `1600`, `false`) are used and a warning is printed.
+
+Each worker keeps one socket open, so the worker count is limited by the open-file limit (`ulimit -n`). The scanner raises the limit when the system allows it, and otherwise uses fewer workers and prints a note.
 
 ---
 
