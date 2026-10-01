@@ -6,6 +6,20 @@ from pathlib import Path
 from datetime import datetime
 import argparse
 
+try:
+    import resource
+except ImportError:  # not available on Windows
+    resource = None
+
+DEFAULT_CONFIG = {
+    "timeout": 0.3,
+    "max_worker": 1600,
+    "create_logs": False
+}
+
+# File descriptors kept free for stdio, log files, DNS lookups, etc.
+FD_HEADROOM = 64
+
 COMMON_PORTS = {
     20: "FTP Data",
     21: "FTP",
@@ -44,38 +58,70 @@ def validate_range(start, end):
     return True
 
 def scan_port(timeout, ip, port):
-    with socket.socket() as s:
-        s.settimeout(timeout)
+    try:
+        with socket.socket() as s:
+            s.settimeout(timeout)
 
-        latency_start_time = time.perf_counter()
-        result = s.connect_ex((ip, port))
-        service = None
-
-        if result == 0:  
-            if port in COMMON_PORTS:
-                service = COMMON_PORTS[port]
-            else:     
-                try:
-                    service = socket.getservbyport(port)
-                except OSError:
-                    service = "unknown"
-                except Exception:
-                    print("Error..")
-                    service = "unknown"
-
-            # for future implication
-            # try:                
-            #     s.sendall(b"GET / HTTP/1.1\r\nHost: example.com\r\n\r\n")   # Sends the entire HTTP request header
-            #     response = s.recv(1024)   # Receive response
-            # except socket.timeout:
-            #     banner = "timed out"
-            # except Exception as e:
-            #     banner = f"error {e}"
-
+            latency_start_time = time.perf_counter()
+            result = s.connect_ex((ip, port))
+            # Stop the clock here so the service lookup isn't counted as latency
             latency_end_time = time.perf_counter()
-            return {"port": port,
-                    "service": service,
-                    "latency": (latency_end_time - latency_start_time) * 1000}
+            service = None
+
+            if result == 0:
+                if port in COMMON_PORTS:
+                    service = COMMON_PORTS[port]
+                else:
+                    try:
+                        service = socket.getservbyport(port)
+                    except OSError:
+                        service = "unknown"
+                    except Exception:
+                        print("Error..")
+                        service = "unknown"
+
+                # for future implication
+                # try:
+                #     s.sendall(b"GET / HTTP/1.1\r\nHost: example.com\r\n\r\n")   # Sends the entire HTTP request header
+                #     response = s.recv(1024)   # Receive response
+                # except socket.timeout:
+                #     banner = "timed out"
+                # except Exception as e:
+                #     banner = f"error {e}"
+
+                return {"port": port,
+                        "service": service,
+                        "latency": (latency_end_time - latency_start_time) * 1000}
+
+    # e.g. "Too many open files": report the port as failed instead of crashing the scan
+    except OSError as e:
+        return {"port": port, "error": str(e)}
+
+
+def fit_workers_to_fd_limit(workers):
+    """
+    Each worker holds one socket open, so more workers than the open-file
+    limit crashes the scan with "Too many open files". Raise the soft limit
+    if the hard limit allows it, otherwise reduce the worker count to fit.
+    """
+    if resource is None:
+        return workers
+
+    needed = workers + FD_HEADROOM
+    soft, hard = resource.getrlimit(resource.RLIMIT_NOFILE)
+
+    if soft != resource.RLIM_INFINITY and soft < needed:
+        new_soft = needed if hard == resource.RLIM_INFINITY else min(needed, hard)
+        try:
+            resource.setrlimit(resource.RLIMIT_NOFILE, (new_soft, hard))
+            soft = new_soft
+        except (ValueError, OSError):
+            pass
+
+    if soft == resource.RLIM_INFINITY:
+        return workers
+
+    return max(1, min(workers, soft - FD_HEADROOM))
 
 
 def scan(config, ip, start, end):
@@ -88,24 +134,74 @@ def scan(config, ip, start, end):
     
     ip = socket.gethostbyname(ip)
 
-    with ThreadPoolExecutor(max_workers=min(config['max_worker'], end - start + 1)) as executor:
+    workers = min(config['max_worker'], end - start + 1)
+    safe_workers = fit_workers_to_fd_limit(workers)
+
+    if safe_workers < workers:
+        print(f"Note: the open-file limit only allows {safe_workers} workers "
+              f"(requested {workers}). Raise it with `ulimit -n` for faster scans.")
+        workers = safe_workers
+
+    with ThreadPoolExecutor(max_workers=workers) as executor:
         futures = [executor.submit(scan_port, config['timeout'], ip, port) for port in range(start, end + 1)]
         data = [f.result() for f in futures]
-    
-    ports = [port for port in data if port is not None]
+
+    failed = [port for port in data if port is not None and "error" in port]
+    ports = [port for port in data if port is not None and "error" not in port]
+
+    if failed:
+        print(f"Warning: {len(failed)} ports could not be scanned ({failed[0]['error']}). "
+              "Results may be incomplete.")
 
     if config['create_logs']:
         create_logs(ip, ports)
 
     return ports
 
+def valid_config_value(key, value):
+    # bool is a subclass of int, so rule it out explicitly for numeric options
+    if key == "timeout":
+        return isinstance(value, (int, float)) and not isinstance(value, bool) and value > 0
+    if key == "max_worker":
+        return isinstance(value, int) and not isinstance(value, bool) and value >= 1
+    if key == "create_logs":
+        return isinstance(value, bool)
+    return False
+
 def load_config():
+    """
+    Load the scanner config. A missing file, malformed JSON or an invalid
+    value falls back to DEFAULT_CONFIG instead of crashing the scan.
+    """
+    config = dict(DEFAULT_CONFIG)
+
     path = (Path(__file__).resolve().parent.parent
                 / "config"
                 / "port_scanner_config.json")
-    
-    with open(path, 'r',encoding='utf-8') as file:
-        return json.load(file)
+
+    try:
+        with open(path, 'r',encoding='utf-8') as file:
+            user_config = json.load(file)
+    except FileNotFoundError:
+        return config
+    except (OSError, ValueError) as e:
+        print(f"Warning: could not read {path.name} ({e}). Using defaults.")
+        return config
+
+    if not isinstance(user_config, dict):
+        print(f"Warning: {path.name} must contain a JSON object. Using defaults.")
+        return config
+
+    for key, value in user_config.items():
+        if key not in DEFAULT_CONFIG:
+            print(f"Warning: unknown config option '{key}' ignored.")
+        elif valid_config_value(key, value):
+            config[key] = value
+        else:
+            print(f"Warning: invalid value for '{key}' ({value!r}). "
+                  f"Using default {DEFAULT_CONFIG[key]!r}.")
+
+    return config
     
 def create_logs(ip, ports):
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -130,7 +226,7 @@ def parser():
     return parser.parse_args()
 
 
-def main(ip = None, start = None, end = None):
+def main(ip = None, start = None, end = None, timeout = None, workers = None, create_logs = None):
 
     if ip is None:
         args = parser()
@@ -154,6 +250,23 @@ def main(ip = None, start = None, end = None):
 
     config = load_config()
 
+    # Command-line options take priority over the config file
+    overrides = {
+        "timeout": ("--timeout", timeout),
+        "max_worker": ("--workers", workers),
+        "create_logs": ("--logs", create_logs)
+    }
+
+    for key, (flag, value) in overrides.items():
+        if value is None:
+            continue
+
+        if not valid_config_value(key, value):
+            print(f"Invalid value for {flag}: {value}")
+            return
+
+        config[key] = value
+
     try:
         ports = scan(
             config, 
@@ -167,9 +280,11 @@ def main(ip = None, start = None, end = None):
         return
 
     end_time = time.perf_counter()
-    counter = len(ports)
-    
-    if ports != None:
+
+    # scan() returns None when the port range is invalid
+    if ports is not None:
+        counter = len(ports)
+
         for port in ports:
             if port != None:
                 print(f"{port['port']:<6}: Open   {port['latency']:>6.2f} ms   ({port['service']})")

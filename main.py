@@ -40,6 +40,26 @@ def build_parser():
         help="The ending port."
     )
 
+    scan_parser.add_argument(
+        "-t",
+        "--timeout",
+        type = float,
+        help = "Socket timeout in seconds (overrides config)"
+    )
+
+    scan_parser.add_argument(
+        "-w",
+        "--workers",
+        type = int,
+        help = "Maximum worker threads (overrides config)"
+    )
+
+    scan_parser.add_argument(
+        "--logs",
+        action = argparse.BooleanOptionalAction,
+        help = "Save a JSON scan report (overrides config)"
+    )
+
     # Display system information
     system_parser = subparsers.add_parser(
         "system",
@@ -55,6 +75,7 @@ def build_parser():
     password_parser.add_argument(
         "-l",
         "--length",
+        type = int,
         default=16,
         help = "Length of the generated password"
     )
@@ -89,6 +110,20 @@ def build_parser():
         type = str
     )
 
+    organize_mode = organize_parser.add_mutually_exclusive_group()
+
+    organize_mode.add_argument(
+        "--dry-run",
+        action = 'store_true',
+        help = "Show what would be moved without moving anything"
+    )
+
+    organize_mode.add_argument(
+        "--undo",
+        action = 'store_true',
+        help = "Reverse the most recent organize of this folder"
+    )
+
 
     return parser
 
@@ -109,7 +144,10 @@ def main():
         port_scanner.main(
             ip = args.ip,
             start = args.start,
-            end = args.end
+            end = args.end,
+            timeout = args.timeout,
+            workers = args.workers,
+            create_logs = args.logs
         )
 
     elif args.command == "password":
@@ -126,7 +164,11 @@ def main():
 
     elif args.command == "organize":
         from utils import file_organizer
-        file_organizer.main(path = args.path)
+        file_organizer.main(
+            path = args.path,
+            dry_run = args.dry_run,
+            undo_last = args.undo
+        )
 
 if __name__ == "__main__":
     main()
