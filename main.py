@@ -55,6 +55,7 @@ def build_parser():
     password_parser.add_argument(
         "-l",
         "--length",
+        type = int,
         default=16,
         help = "Length of the generated password"
     )

@@ -10,7 +10,7 @@ def organizer(path):
             ".jpeg"
         ),
         "PDFs":(
-            ".pdf"
+            ".pdf",
         ),
         "Videos":(
             ".mp4",
@@ -28,7 +28,7 @@ def organizer(path):
         ),
         "Documents":(
             ".docx",
-            "txt",
+            ".txt",
             ".md"
         ),
         "Archives":(
