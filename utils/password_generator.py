@@ -64,26 +64,28 @@ def main(length = None, exclude_ambiguous = False):
         amb = input("Exclude ambiguous characters (0 O o 1 l I)? (y/n): ")
 
         exclude_ambiguous = amb.lower() == "y"
-    
-    if length.isdigit():
+
+        # input() returns a string; the CLI path already passes an int
+        if not length.isdigit():
+            print("Enter a valid number")
+            print("\n" + "==================================")
+            return
+
         length = int(length)
 
-        if length < 8:
-            strength = "Weak"
-        elif length < 12:
-            strength = "Medium"
-        else:
-            strength = "Strong"
-        
-        try:
-            password = password_generator(length, exclude_ambiguous)
-            print(f"The generated password is : {password}")
-            print(f"The password strength is : {strength}")
-        except ValueError as e:
-            print(e)
-
+    if length < 8:
+        strength = "Weak"
+    elif length < 12:
+        strength = "Medium"
     else:
-        print("Enter a valid number")
+        strength = "Strong"
+
+    try:
+        password = password_generator(length, exclude_ambiguous)
+        print(f"The generated password is : {password}")
+        print(f"The password strength is : {strength}")
+    except ValueError as e:
+        print(e)
 
     print("\n" + "==================================")
 

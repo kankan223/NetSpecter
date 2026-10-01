@@ -22,7 +22,6 @@ def get_system_info():
         "disk_total": disk.total,
         "disk_used": disk.used,
         "disk_percent": disk.percent,
-        "disk_info": psutil.disk_usage('/'),
         "cpu_core": psutil.cpu_count(logical=False),
         "logical_cpu": psutil.cpu_count(),
         "boot_time": boot_time,
@@ -46,7 +45,7 @@ def main():
     print("\n" + "-------SYSTEM INFO-------")
     print("=========================")
     print(f"CPU Usage: {system_data['cpu_usage']}%")
-    print(f"CPU Cores: {system_data['cpu_core']}")
+    print(f"CPU Cores: {system_data['cpu_core'] or 'Unknown'}")
     print(f"Logical CPUs: {system_data['logical_cpu']} \n")
 
     print(f"RAM Usage: {used_ram_gb:.2f} / {total_ram_gb:.2f} GB ({system_data['ram_percent']}%)")

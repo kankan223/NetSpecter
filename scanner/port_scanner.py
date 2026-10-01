@@ -167,9 +167,11 @@ def main(ip = None, start = None, end = None):
         return
 
     end_time = time.perf_counter()
-    counter = len(ports)
-    
-    if ports != None:
+
+    # scan() returns None when the port range is invalid
+    if ports is not None:
+        counter = len(ports)
+
         for port in ports:
             if port != None:
                 print(f"{port['port']:<6}: Open   {port['latency']:>6.2f} ms   ({port['service']})")
