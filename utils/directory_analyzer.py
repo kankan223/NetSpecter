@@ -1,6 +1,10 @@
 from pathlib import Path
 from datetime import datetime
 import json
+import os
+
+# Keys in the report that are not file extensions
+SUMMARY_KEYS = ("file", "folder", "dir_size", "skipped")
 
 def report(path):
 
@@ -12,7 +16,8 @@ def report(path):
     - Total folders
     - Counts of supported file extensions
 
-    Unknown extensions are counted under 'others'.
+    Unknown extensions are counted under 'others'. Symlinks are not followed
+    or counted. Anything that could not be read is listed under 'skipped'.
     """
 
     file_types = {
@@ -33,23 +38,42 @@ def report(path):
         ".exe": 0,  
         ".zip": 0,  
         "others": 0,   
-        "dir_size": 0       
+        "dir_size": 0,
+        "skipped": []
     }
 
+    # os.walk reports unreadable folders through onerror, where rglob skips them silently
+    def on_error(error):
+        file_types["skipped"].append(str(error.filename))
 
-    for item in path.rglob("*"):
-        if item.is_file():
+    for root, dirs, files in os.walk(path, onerror=on_error):
+        root = Path(root)
+
+        for name in dirs:
+            if not (root / name).is_symlink():
+                file_types["folder"] += 1
+
+        for name in files:
+            item = root / name
+
+            try:
+                if item.is_symlink() or not item.is_file():
+                    continue
+
+                size = item.stat().st_size
+            except OSError:
+                # e.g. deleted while the walk was running
+                file_types["skipped"].append(str(item))
+                continue
+
             file_types["file"] += 1
-            file_types["dir_size"] += item.stat().st_size
-            
+            file_types["dir_size"] += size
+
             suffix = item.suffix.lower()
             if suffix in file_types:
                 file_types[suffix] += 1
             else:
                 file_types["others"] += 1
-
-        elif item.is_dir():
-            file_types["folder"] += 1
 
     return file_types
 
@@ -87,10 +111,16 @@ def write_report(path, data):
         file.write("\n".join(report))
 
         for key, value in data.items():
-            if key not in ("file", "folder", "dir_size") and value > 0:
+            if key not in SUMMARY_KEYS and value > 0:
                 file.write("\n" + f"{key} : {value}")
 
         file.write("\n\n" + f"Folder Size : {format_size(data['dir_size'])}")
+
+        if data["skipped"]:
+            file.write("\n\n" + f"Skipped (could not be read) : {len(data['skipped'])}")
+
+            for item in data["skipped"]:
+                file.write("\n" + item)
     return log_file_path, log_file_path_json
 
     
@@ -132,10 +162,19 @@ def main(path = None):
         print("\n" + "Extensions:")
 
         for key, value in data.items():
-            if key not in ("file", "folder", "dir_size") and value > 0:
+            if key not in SUMMARY_KEYS and value > 0:
                 print(f"{key} : {value}")
 
         print("\n" + f"Folder Size : {format_size(data['dir_size'])}")
+
+        if data["skipped"]:
+            print("\n" + f"Warning: {len(data['skipped'])} items could not be read, so totals may be incomplete:")
+
+            for item in data["skipped"][:5]:
+                print(f"  {item}")
+
+            if len(data["skipped"]) > 5:
+                print("  ... full list in the report files")
 
         txt_path, json_path = write_report(path, data)
         print(f"TXT report saved to: {txt_path}")
