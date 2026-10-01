@@ -110,6 +110,20 @@ def build_parser():
         type = str
     )
 
+    organize_mode = organize_parser.add_mutually_exclusive_group()
+
+    organize_mode.add_argument(
+        "--dry-run",
+        action = 'store_true',
+        help = "Show what would be moved without moving anything"
+    )
+
+    organize_mode.add_argument(
+        "--undo",
+        action = 'store_true',
+        help = "Reverse the most recent organize of this folder"
+    )
+
 
     return parser
 
@@ -150,7 +164,11 @@ def main():
 
     elif args.command == "organize":
         from utils import file_organizer
-        file_organizer.main(path = args.path)
+        file_organizer.main(
+            path = args.path,
+            dry_run = args.dry_run,
+            undo_last = args.undo
+        )
 
 if __name__ == "__main__":
     main()

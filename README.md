@@ -182,6 +182,13 @@ python main.py analyze ~/Downloads
 python main.py organize ~/Downloads
 ```
 
+Preview the moves without changing anything, or reverse the last run:
+
+```bash
+python main.py organize ~/Downloads --dry-run
+python main.py organize ~/Downloads --undo
+```
+
 ### System Information
 
 ```bash
